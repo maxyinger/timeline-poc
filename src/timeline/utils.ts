@@ -45,29 +45,31 @@ export const getTimelineRanges = (entries: TimelineEntry[]): TimelineRanges => {
   );
 };
 
-export type NormalizedTimeline = {
+export type NormalizedTimelineRanges = {
   duration: number;
   normalizedEntryRanges: Range[];
 };
 
 export const normalizeTimelineRanges = (
   referenceTimeline: TimelineRanges
-): NormalizedTimeline => {
+): NormalizedTimelineRanges => {
   const [timelineStart, timelineEnd] = referenceTimeline.timelineRange;
   const duration = timelineEnd - timelineStart;
 
-  const normalizedTimelineRange = interpolateRange(
+  const interpolateTimelineNormalizedRange = interpolateRange(
     referenceTimeline.timelineRange,
     [0, 1]
   );
 
+  const timelineNormalizedRangeFromRange = (r: Range): Range => [
+    interpolateTimelineNormalizedRange(r[0]),
+    interpolateTimelineNormalizedRange(r[1])
+  ];
+
   return {
     duration,
-    normalizedEntryRanges: referenceTimeline.entryRanges.map(entryrange => {
-      return [
-        normalizedTimelineRange(entryrange[0]),
-        normalizedTimelineRange(entryrange[1])
-      ];
-    })
+    normalizedEntryRanges: referenceTimeline.entryRanges.map(
+      timelineNormalizedRangeFromRange
+    )
   };
 };
