@@ -1,15 +1,21 @@
 import { TimelineEntry } from "./types";
-import { Range, interpolateRange } from "./calc";
+import { Range, interpolateRange, deltaFromRange } from "./calc";
 
-type TimelineRanges = {
-  timelineRange: Range;
-  entryRanges: Range[];
+export type TimelineEntryWithRange = TimelineEntry & {
+  range: Range;
 };
 
-export const getTimelineRanges = (entries: TimelineEntry[]): TimelineRanges => {
-  return entries.reduce<TimelineRanges>(
+export type TimelineWithRanges = {
+  range: Range;
+  entries: TimelineEntryWithRange[];
+};
+
+export const getTimelineWithRanges = (
+  entries: TimelineEntry[]
+): TimelineWithRanges => {
+  return entries.reduce<TimelineWithRanges>(
     (accum, entry) => {
-      const [timelineStart, timelineEnd] = accum.timelineRange;
+      const [timelineStart, timelineEnd] = accum.range;
 
       /**
        * Calculate earliest start.
@@ -19,57 +25,66 @@ export const getTimelineRanges = (entries: TimelineEntry[]): TimelineRanges => {
         typeof entry.offset === "function"
           ? entry.offset(current)
           : entry.offset;
-      const start = Math.min(timelineStart, entryStart);
+      const nextTimelineStart = Math.min(timelineStart, entryStart);
 
       /**
        * Calculate latest end.
        */
-      const entryEnd = entryStart + entry.transition.getDuration();
-      const end = Math.max(timelineEnd, entryEnd);
+      const entryEnd = entryStart + entry.progressor.getDuration();
+      const nextTimelineEnd = Math.max(timelineEnd, entryEnd);
 
       /**
        * Add reference range
        */
       const entryRange: Range = [entryStart, entryEnd];
-      accum.entryRanges.push(entryRange);
+      const entryWithRange = {
+        ...entry,
+        range: entryRange
+      };
 
       return {
-        ...accum,
-        timelineRange: [start, end]
+        range: [nextTimelineStart, nextTimelineEnd],
+        entries: [...accum.entries, entryWithRange]
       };
     },
     {
-      timelineRange: [0, 0],
-      entryRanges: []
+      range: [0, 0],
+      entries: []
     }
   );
 };
 
-export type NormalizedTimelineRanges = {
-  duration: number;
-  normalizedEntryRanges: Range[];
-};
+export const normalizeRangeToTimeline = (
+  timelineRange: Range,
+  entryRange: Range
+): Range => {
+  const timelineNormalizedRange = interpolateRange(timelineRange, [0, 1]);
 
-export const normalizeTimelineRanges = (
-  referenceTimeline: TimelineRanges
-): NormalizedTimelineRanges => {
-  const [timelineStart, timelineEnd] = referenceTimeline.timelineRange;
-  const duration = timelineEnd - timelineStart;
-
-  const interpolateTimelineNormalizedRange = interpolateRange(
-    referenceTimeline.timelineRange,
-    [0, 1]
-  );
-
-  const timelineNormalizedRangeFromRange = (r: Range): Range => [
-    interpolateTimelineNormalizedRange(r[0]),
-    interpolateTimelineNormalizedRange(r[1])
+  const normalizeEntryRangeToTimeline = (r: Range): Range => [
+    timelineNormalizedRange(r[0]),
+    timelineNormalizedRange(r[1])
   ];
 
+  return normalizeEntryRangeToTimeline(entryRange);
+};
+
+export const getNormalizedTimeline = (entries: TimelineEntry[]) => {
+  const timelineWithRanges = getTimelineWithRanges(entries);
+  const entriesWithNormalizedRange = timelineWithRanges.entries.map(
+    entryWithRange => {
+      const { range, ...entry } = entryWithRange;
+      return {
+        ...entry,
+        normalizedRange: normalizeRangeToTimeline(
+          timelineWithRanges.range,
+          range
+        )
+      };
+    }
+  );
+
   return {
-    duration,
-    normalizedEntryRanges: referenceTimeline.entryRanges.map(
-      timelineNormalizedRangeFromRange
-    )
+    duration: deltaFromRange(timelineWithRanges.range),
+    entries: entriesWithNormalizedRange
   };
 };

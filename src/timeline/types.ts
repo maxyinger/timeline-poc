@@ -1,17 +1,20 @@
 import { TEasing } from "ts-easing";
-import { Range } from "./calc";
+import { Subscribe } from "./emitter";
 
 export type Offset = number | string;
 
-export interface TransitionInterface {
+export type InterpolationValue<T> = Record<keyof T, number>;
+
+export interface Progressor<T = Record<string, any>> {
   getDuration: () => number;
-  setProgress: (t: number) => void;
+  setProgress: (t: number) => InterpolationValue<T>;
+  subscribe: Subscribe<InterpolationValue<T>>;
 }
 
 export type TimelineEntry = {
   key: string;
-  transition: TransitionInterface;
   offset: ((t: number) => number) | number;
+  progressor: Progressor;
 };
 
 export type TweenConfig<T extends Record<string, number>> = {
@@ -21,17 +24,12 @@ export type TweenConfig<T extends Record<string, number>> = {
   to: T;
 };
 
-export type StaggerConfig<T extends Record<string, number>> = {
+export type StaggerConfig = {
   length: number;
   delay: ((i: number) => number) | number;
-} & TweenConfig<T>;
+  progressor: Progressor;
+};
 
-export type Tween<T extends Record<string, number>> = (
-  config: TweenConfig<T>
-) => TransitionInterface;
+export type Stagger = (config: StaggerConfig) => Progressor;
 
-export type Stagger<T extends Record<string, number>> = (
-  config: StaggerConfig<T>
-) => TransitionInterface;
-
-export type Timeline = (config: TimelineEntry[]) => TransitionInterface;
+export type Timeline = (config: TimelineEntry[]) => Progressor;

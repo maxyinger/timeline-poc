@@ -5,7 +5,7 @@
  * const { setTimeScale, progress } = timeline([
  *  {
  *   key: 'phase1',
- *   transition: tween({
+ *   interpolator: tween({
  *    duration: 400,
  *    ease: easing.outSine
  *    from: {
@@ -21,43 +21,79 @@
  * },
  * {
  *   key: 'phase2',
- *   transition: stagger({
+ *   offset: 0.15 | 'v => v + 0.15'
+ *   interpolator: stagger({
+ *    length: 5,
+ *    delay: 200 | i => i * 20,
+ *    interpolator: tween({
  *     duration: 200,
  *     ease: easing.outSine
- *     length: 5,
- *     delay: 200 | i => i * 20,
  *     from: {
  *       opacity: 0
  *     },
  *     to: {
  *        opacity: 1
  *     },
- *    }),
- *    offset: 0.15 | 'v => v + 0.15'
+ *    })
+ *   }),
  *  }
  * ]);
  */
 
+import { clamp, interpolateRange } from "./calc";
+import emitter from "./emitter";
 import { Timeline } from "./types";
-import { getDurationFromTimelineEntries } from "./utils";
+import { getNormalizedTimeline } from "./utils";
 
 const timeline: Timeline = entries => {
+  const normalizedTimeline = getNormalizedTimeline(entries);
+  const subscriptions = emitter<any>();
+
   const state = {
-    duration: getDurationFromTimelineEntries(entries),
-    progress: 0
+    duration: normalizedTimeline.duration,
+    progress: 0,
+    timeScale: 1
+  };
+
+  const interpolator = (progress: number) => {
+    const clampedProgress = clamp([0, 1])(progress);
+
+    const interpolatedValue = normalizedTimeline.entries.reduce<
+      Record<string, any>
+    >((interpolatedValue, entry) => {
+      const getEntryProgress = interpolateRange(entry.normalizedRange, [0, 1]);
+      const entryProgress = getEntryProgress(clampedProgress);
+
+      const entryInterpolatedValue = {
+        ...interpolatedValue[entry.key],
+        ...entry.progressor.setProgress(entryProgress)
+      };
+
+      return {
+        ...interpolatedValue,
+        [entry.key]: entryInterpolatedValue
+      };
+    }, {});
+
+    return interpolatedValue;
   };
 
   const getDuration = () => {
-    return state.duration;
+    return state.duration * state.timeScale;
   };
 
-  const setProgress = (t: number) => {
-    state.progress = t;
+  const setProgress = (progress: number) => {
+    state.progress = clamp([0, 1])(progress);
+    const interpolatedValue = interpolator(state.progress);
+
+    subscriptions.emit(interpolatedValue);
+    return interpolatedValue;
   };
 
   return {
     getDuration,
-    setProgress
+    setProgress,
+    subscribe: subscriptions.subscribe
   };
 };
 

@@ -16,5 +16,9 @@ export const interpolateRange = (r1: Range, r2: Range) => (v: number) => {
   return lerp(r2[0], r2[1], progress);
 };
 
+export const deltaFromRange = (r: Range) => {
+  return Math.abs(r[1] - r[0]);
+};
+
 export * from "./types";
 export { default as lerp } from "./lerp";
