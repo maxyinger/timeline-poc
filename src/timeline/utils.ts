@@ -15,7 +15,7 @@ export const getTimelineWithRanges = (
 ): TimelineWithRanges => {
   return entries.reduce<TimelineWithRanges>(
     (accum, entry) => {
-      if (!entry.offset) {
+      if (entry.offset === undefined) {
         entry.offset = (v: number) => v;
       }
 

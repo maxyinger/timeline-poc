@@ -49,6 +49,8 @@ const timeline: Timeline = entries => {
   const normalizedTimeline = getNormalizedTimeline(entries);
   const subscriptions = emitter<any>();
 
+  console.log(normalizedTimeline);
+
   const state = {
     duration: normalizedTimeline.duration,
     progress: 0,

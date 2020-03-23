@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from "react";
-import timeline, { tween, clamp } from "./timeline";
+import React, { useLayoutEffect, useEffect } from "react";
+import timeline, { tween, play, easing } from "./timeline";
 import logo from "./logo.svg";
 import "./App.css";
 
-const timeWine = timeline([
+const tl = timeline([
   {
-    key: "logo",
+    key: "app",
     progressor: tween({
+      ease: easing.inOutSine,
+      duration: 1000,
       from: {
-        y: -200
+        y: -100
       },
       to: {
         y: 0
@@ -16,54 +18,105 @@ const timeWine = timeline([
     })
   },
   {
-    key: "headline",
+    key: "inner",
+    offset: 0,
     progressor: tween({
+      ease: easing.inOutSine,
+      duration: 1000,
       from: {
-        x: -200
+        y: 100
       },
       to: {
-        x: 0
+        y: 0
+      }
+    })
+  },
+  {
+    key: "logo",
+    offset: v => v - 300,
+    progressor: tween({
+      ease: easing.outQuint,
+      duration: 4000,
+      from: {
+        opacity: 0,
+        y: -50
+      },
+      to: {
+        opacity: 1,
+        y: 0
+      }
+    })
+  },
+  {
+    key: "subheadline",
+    offset: v => v - 3000,
+    progressor: tween({
+      ease: easing.outCirc,
+      duration: 2000,
+      from: {
+        opacity: 0,
+        y: 40
+      },
+      to: {
+        opacity: 1,
+        y: 0
       }
     })
   }
 ]);
 
 function App() {
-  const [progress, setProgress] = useState(0);
-  const [current, setCurrent] = useState(() => timeWine.setProgress(0));
-
-  const updateProgress = (v: number) => {
-    setProgress(progress => {
-      const clamped = clamp([0, 1])(progress + v);
-      const fixed = clamped.toFixed(1);
-      return +fixed;
+  useLayoutEffect(() => {
+    const unsubscribe = tl.subscribe(v => {
+      Object.entries(v).forEach(([key, val]) => {
+        Object.entries(val).forEach(([property, pureVal]) => {
+          document.body.style.setProperty(`--${key}-${property}`, pureVal);
+        });
+      });
     });
-  };
 
-  useEffect(() => {
-    const unsubscribe = timeWine.subscribe(v => setCurrent(v));
+    tl.setProgress(0);
+
     return unsubscribe;
   }, []);
 
   useEffect(() => {
-    timeWine.setProgress(progress);
-  }, [progress]);
+    const id = setTimeout(() => play(tl), 1000);
+    return () => clearTimeout(id);
+  }, []);
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>{progress}</p>
-        <pre>{JSON.stringify(current, null, "\t")}</pre>
-        <div>
-          <button disabled={progress <= 0} onClick={() => updateProgress(-0.1)}>
-            -0.1
-          </button>
-          <button disabled={progress >= 1} onClick={() => updateProgress(0.1)}>
-            +0.1
-          </button>
-        </div>
-      </header>
+    <div
+      className="App fsa"
+      style={{
+        transform: `translateY(calc(var(--app-y) * 1%))`
+      }}
+    >
+      <div
+        className="inner fsa"
+        style={{
+          transform: `translateY(calc(var(--inner-y) * 1%))`
+        }}
+      >
+        <header className="App-header">
+          <div
+            style={{
+              opacity: `var(--logo-opacity)`,
+              transform: `translateY(calc(var(--logo-y) * 1%))`
+            }}
+          >
+            <img src={logo} className="App-logo" alt="logo" />
+          </div>
+          <div
+            style={{
+              opacity: `var(--subheadline-opacity)`,
+              transform: `translateY(calc(var(--subheadline-y) * 1%))`
+            }}
+          >
+            <p>Subheadline</p>
+          </div>
+        </header>
+      </div>
     </div>
   );
 }
