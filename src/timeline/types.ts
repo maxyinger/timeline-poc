@@ -13,13 +13,13 @@ export interface Progressor<T = Record<string, any>> {
 
 export type TimelineEntry = {
   key: string;
-  offset: ((t: number) => number) | number;
+  offset?: ((t: number) => number) | number;
   progressor: Progressor;
 };
 
 export type TweenConfig<T extends Record<string, number>> = {
-  duration: number;
-  ease: TEasing;
+  duration?: number;
+  ease?: TEasing;
   from: T;
   to: T;
 };

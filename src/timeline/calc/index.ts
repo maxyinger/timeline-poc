@@ -8,7 +8,8 @@ export const clamp = (r: Range) => (v: number) => {
 };
 
 export const progressInRange = (r: Range) => (v: number) => {
-  return clamp(r)(v) / (r[1] - r[0]);
+  const clamped = clamp(r)(v);
+  return (clamped - r[0]) / (r[1] - r[0]);
 };
 
 export const interpolateRange = (r1: Range, r2: Range) => (v: number) => {

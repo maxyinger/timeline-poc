@@ -1,10 +1,17 @@
 import { clamp, lerp } from "./calc";
 import emitter from "./emitter";
 import { InterpolationValue, Progressor, TweenConfig } from "./types";
+import { easing } from "ts-easing";
 
 const tween = <T extends Record<string, number>>(
   config: TweenConfig<T>
 ): Progressor<T> => {
+  if (!config.ease) {
+    config.ease = easing.linear;
+  }
+  if (!config.duration) {
+    config.duration = 300;
+  }
   const subscriptions = emitter<InterpolationValue<T>>();
 
   const state = {
@@ -21,7 +28,7 @@ const tween = <T extends Record<string, number>>(
         current[animatedProperty] = lerp(
           config.from[animatedProperty],
           config.to[animatedProperty],
-          config.ease(clampedProgress)
+          config.ease!(clampedProgress)
         );
         return current;
       },
