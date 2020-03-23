@@ -98,6 +98,10 @@ function App() {
           transform: `translateY(calc(var(--inner-y) * 1%))`
         }}
       >
+        <div className="bg fsa">
+          SOME BACKGORUND TEXT SOME BACKGORUND TEXT SOME BACKGORUND TEXT SOME
+          BACKGORUND TEXT SOME BACKGORUND TEXT
+        </div>
         <header className="App-header">
           <div
             style={{

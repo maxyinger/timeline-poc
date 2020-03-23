@@ -11,7 +11,11 @@
   text-align: center;
 }
 
-.App-Inner {
+.bg {
+  color: black;
+  font-size: 20vw;
+  line-height: 0.75;
+  font-weight: 900;
 }
 
 .App-logo {
