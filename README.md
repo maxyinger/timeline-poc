@@ -10,4 +10,4 @@ yarn start
 
 ### Example
 
-![](github_assets/example_1.png)
+![](github_assets/exaple_1.gif)
