@@ -69,13 +69,6 @@ const timeline: Timeline = entries => {
         ...entry.progressor.setProgress(entryProgress)
       };
 
-      console.log(
-        entry.key,
-        clampedProgress,
-        entry.normalizedRange,
-        entryProgress
-      );
-
       return {
         ...interpolatedValue,
         [entry.key]: entryInterpolatedValue

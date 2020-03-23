@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import timeline, { tween } from "./timeline";
+import timeline, { tween, clamp } from "./timeline";
 import logo from "./logo.svg";
 import "./App.css";
 
@@ -32,6 +32,14 @@ function App() {
   const [progress, setProgress] = useState(0);
   const [current, setCurrent] = useState(() => timeWine.setProgress(0));
 
+  const updateProgress = (v: number) => {
+    setProgress(progress => {
+      const clamped = clamp([0, 1])(progress + v);
+      const fixed = clamped.toFixed(1);
+      return +fixed;
+    });
+  };
+
   useEffect(() => {
     const unsubscribe = timeWine.subscribe(v => setCurrent(v));
     return unsubscribe;
@@ -48,8 +56,12 @@ function App() {
         <p>{progress}</p>
         <pre>{JSON.stringify(current, null, "\t")}</pre>
         <div>
-          <button onClick={() => setProgress(v => v - 0.1)}>-0.1</button>
-          <button onClick={() => setProgress(v => v + 0.1)}>+0.1</button>
+          <button disabled={progress <= 0} onClick={() => updateProgress(-0.1)}>
+            -0.1
+          </button>
+          <button disabled={progress >= 1} onClick={() => updateProgress(0.1)}>
+            +0.1
+          </button>
         </div>
       </header>
     </div>
